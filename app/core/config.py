@@ -25,8 +25,7 @@ class Settings(BaseSettings):
     def get_cohere_api_key(self) -> str:
         if not self.cohere_api_key:
             raise ValueError(
-                "COHERE_API_KEY is not configured. "
-                "Add it to your .env file."
+                "COHERE_API_KEY is not configured. Add it to your .env file."
             )
 
         return self.cohere_api_key
