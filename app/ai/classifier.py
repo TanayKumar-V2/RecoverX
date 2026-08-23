@@ -59,48 +59,48 @@ class CohereClassifier:
     @staticmethod
     def _response_schema() -> JsonObjectResponseFormatV2:
         return JsonObjectResponseFormatV2(
-        type="json_object",
-        json_schema={
-            "type": "object",
-            "required": [
-                "root_cause",
-                "confidence",
-                "recommended_action",
-                "reasoning",
-            ],
-            "properties": {
-                "root_cause": {
-                    "type": "string",
-                    "enum": [
-                        "insufficient_funds",
-                        "expired_card",
-                        "hard_decline",
-                        "soft_decline",
-                        "fraud_flag",
-                        "transient_glitch",
-                    ],
-                },
-                "confidence": {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 1,
-                },
-                "recommended_action": {
-                    "type": "string",
-                    "enum": [
-                        "smart_retry",
-                        "send_update_link",
-                        "immediate_retry",
-                        "escalate_manual_review",
-                        "stop_no_action",
-                    ],
-                },
-                "reasoning": {
-                    "type": "string",
+            type="json_object",
+            json_schema={
+                "type": "object",
+                "required": [
+                    "root_cause",
+                    "confidence",
+                    "recommended_action",
+                    "reasoning",
+                ],
+                "properties": {
+                    "root_cause": {
+                        "type": "string",
+                        "enum": [
+                            "insufficient_funds",
+                            "expired_card",
+                            "hard_decline",
+                            "soft_decline",
+                            "fraud_flag",
+                            "transient_glitch",
+                        ],
+                    },
+                    "confidence": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1,
+                    },
+                    "recommended_action": {
+                        "type": "string",
+                        "enum": [
+                            "smart_retry",
+                            "send_update_link",
+                            "immediate_retry",
+                            "escalate_manual_review",
+                            "stop_no_action",
+                        ],
+                    },
+                    "reasoning": {
+                        "type": "string",
+                    },
                 },
             },
-        },
-    )
+        )
 
     def classify(
         self,
