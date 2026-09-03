@@ -103,6 +103,41 @@ class RecoveryRepository:
             for row in rows
         ]
 
+    def get_by_run_and_payment(
+        self,
+        run_id: UUID,
+        payment_id: UUID,
+    ) -> list[RecoveryAttempt]:
+        statement = (
+            select(RecoveryAttemptORM)
+            .where(
+                RecoveryAttemptORM.run_id == run_id,
+                RecoveryAttemptORM.payment_id == payment_id,
+            )
+            .order_by(
+                RecoveryAttemptORM.attempt_number
+            )
+        )
+
+        rows = self.session.scalars(statement).all()
+
+        return [
+            RecoveryAttempt(
+                action_id=row.action_id,
+                run_id=run_id,
+                payment_id=row.payment_id,
+                action_type=RecommendedAction(
+                    row.action_type
+                ),
+                attempt_number=row.attempt_number,
+                outcome=RecoveryOutcome(row.outcome),
+                amount_recovered=row.amount_recovered,
+                timestamp=row.timestamp,
+                policy_reason=row.policy_reason,
+            )
+            for row in rows
+        ]
+
     def list_all(self) -> list[RecoveryAttempt]:
         statement = select(RecoveryAttemptORM).order_by(
             RecoveryAttemptORM.timestamp
@@ -128,3 +163,5 @@ class RecoveryRepository:
             )
             for row in rows
         ]
+        
+    

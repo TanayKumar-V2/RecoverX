@@ -69,3 +69,23 @@ class AuditRepository:
         return list(
             self.session.scalars(statement).all()
         )
+
+    def get_for_run_and_payment(
+        self,
+        run_id: UUID,
+        payment_id: UUID,
+    ) -> list[AuditEventORM]:
+        statement = (
+            select(AuditEventORM)
+            .where(
+                AuditEventORM.run_id == run_id,
+                AuditEventORM.payment_id == payment_id,
+            )
+            .order_by(
+                AuditEventORM.timestamp
+            )
+        )
+
+        return list(
+            self.session.scalars(statement).all()
+        )
