@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from app.domain.enums import (
@@ -25,7 +25,7 @@ def create_payment() -> Payment:
         decline_code="network_error",
         customer_tenure_months=18,
         past_retry_count=0,
-        failed_at=datetime.now(timezone.utc),
+        failed_at=datetime.now(UTC),
         subscription_plan="monthly",
     )
 

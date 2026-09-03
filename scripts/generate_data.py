@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
 import numpy as np
 import pandas as pd
-
 
 SEED = 42
 NUM_PAYMENTS = 300
@@ -101,7 +100,7 @@ def generate_failed_at(
     rng: random.Random,
 ) -> datetime:
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     days_ago = rng.randint(0, 30)
     hours_ago = rng.randint(0, 23)

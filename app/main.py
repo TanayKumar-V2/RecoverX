@@ -1,12 +1,11 @@
-from fastapi import FastAPI
 from cohere import (
     TextAssistantMessageResponseContentItem,
     UserChatMessageV2,
 )
+from fastapi import FastAPI
 
 from app.ai.cohere_client import create_cohere_client
 from app.core.config import get_settings
-
 
 settings = get_settings()
 
@@ -47,7 +46,7 @@ def cohere_health_check() -> dict[str, str]:
     first_item = content[0]
 
     if not isinstance(first_item, TextAssistantMessageResponseContentItem):
-        raise RuntimeError("Cohere returned a non-text response.")
+        raise TypeError("Cohere returned a non-text response.")
 
     return {
         "status": "ok",

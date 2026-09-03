@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from app.domain.enums import (
@@ -21,7 +21,7 @@ def create_payment(
         decline_code="do_not_honor",
         customer_tenure_months=18,
         past_retry_count=retry_count,
-        failed_at=datetime.now(timezone.utc),
+        failed_at=datetime.now(UTC),
         subscription_plan="monthly",
     )
 

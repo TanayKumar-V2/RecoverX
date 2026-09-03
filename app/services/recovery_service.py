@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.domain.enums import (
     RecommendedAction,
@@ -14,7 +14,6 @@ from app.domain.models import (
     PolicyDecision,
     RecoveryAttempt,
 )
-
 
 RECOVERY_PROBABILITY: dict[RootCause, float] = {
     RootCause.INSUFFICIENT_FUNDS: 0.55,
@@ -73,7 +72,7 @@ class RecoverySimulator:
                 ),
                 outcome=RecoveryOutcome.PENDING,
                 amount_recovered=0.0,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 policy_reason=decision.reason,
             )
 
@@ -94,7 +93,7 @@ class RecoverySimulator:
             attempt_number=decision.attempt_number,
             outcome=outcome,
             amount_recovered=amount_recovered,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             policy_reason=decision.reason,
         )
 

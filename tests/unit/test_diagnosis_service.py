@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from app.domain.enums import (
@@ -6,9 +6,8 @@ from app.domain.enums import (
     RecommendedAction,
     RootCause,
 )
-from app.domain.models import Diagnosis, Payment
+from app.domain.models import Payment
 from app.services.diagnosis_service import (
-    DiagnosisService,
     classify_by_rule,
 )
 
@@ -24,7 +23,7 @@ def create_payment(
         decline_code=decline_code,
         customer_tenure_months=18,
         past_retry_count=0,
-        failed_at=datetime.now(timezone.utc),
+        failed_at=datetime.now(UTC),
         subscription_plan="monthly",
     )
 

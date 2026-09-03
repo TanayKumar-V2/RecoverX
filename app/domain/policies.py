@@ -1,5 +1,4 @@
-from app.domain.enums import RecommendedAction, RootCause
-
+from app.domain.enums import RecommendedAction
 
 MAX_RETRIES: dict[RecommendedAction, int] = {
     RecommendedAction.SMART_RETRY: 3,

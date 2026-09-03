@@ -4,7 +4,6 @@ import json
 import sqlite3
 from pathlib import Path
 
-
 CACHE_DB_PATH = Path("data/llm_cache.db")
 
 

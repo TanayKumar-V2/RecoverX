@@ -1,9 +1,9 @@
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.domain.enums import (
-    RecommendedAction,
     DiagnosisSource,
+    RecommendedAction,
     RootCause,
 )
 from app.domain.models import Diagnosis, Payment
@@ -19,7 +19,7 @@ def main() -> None:
         decline_code="network_error",
         customer_tenure_months=24,
         past_retry_count=0,
-        failed_at=datetime.now(timezone.utc),
+        failed_at=datetime.now(UTC),
         subscription_plan="monthly",
     )
 
@@ -28,13 +28,8 @@ def main() -> None:
         root_cause=RootCause.TRANSIENT_GLITCH,
         confidence=1.0,
         source=DiagnosisSource.RULE,
-        recommended_action=(
-            RecommendedAction.IMMEDIATE_RETRY
-        ),
-        reasoning=(
-            "Network errors are treated as "
-            "transient failures."
-        ),
+        recommended_action=(RecommendedAction.IMMEDIATE_RETRY),
+        reasoning=("Network errors are treated as transient failures."),
     )
 
     decision = decide_action(
@@ -42,9 +37,7 @@ def main() -> None:
         diagnosis,
     )
 
-    simulator = RecoverySimulator(
-        random.Random(42)
-    )
+    simulator = RecoverySimulator(random.Random(42))
 
     recovery = simulator.execute(
         payment,

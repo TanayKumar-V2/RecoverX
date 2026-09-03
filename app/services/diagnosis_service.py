@@ -2,7 +2,6 @@ from app.ai.classifier import CohereClassifier
 from app.domain.enums import DiagnosisSource, RecommendedAction, RootCause
 from app.domain.models import Diagnosis, Payment
 
-
 RULE_TABLE: dict[str, tuple[RootCause, RecommendedAction]] = {
     "expired_card": (
         RootCause.EXPIRED_CARD,
