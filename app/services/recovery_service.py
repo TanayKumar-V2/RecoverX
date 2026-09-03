@@ -2,18 +2,10 @@ from __future__ import annotations
 
 import random
 from datetime import UTC, datetime
+from uuid import UUID, uuid4
 
-from app.domain.enums import (
-    RecommendedAction,
-    RecoveryOutcome,
-    RootCause,
-)
-from app.domain.models import (
-    Diagnosis,
-    Payment,
-    PolicyDecision,
-    RecoveryAttempt,
-)
+from app.domain.enums import RecommendedAction, RecoveryOutcome, RootCause
+from app.domain.models import Diagnosis, Payment, PolicyDecision, RecoveryAttempt
 
 RECOVERY_PROBABILITY: dict[RootCause, float] = {
     RootCause.INSUFFICIENT_FUNDS: 0.55,
@@ -44,8 +36,10 @@ class RecoverySimulator:
             0.0,
         )
 
-        # Each additional retry becomes slightly less effective.
-        retry_penalty = max(attempt_number - 1, 0) * 0.10
+        retry_penalty = max(
+            attempt_number - 1,
+            0,
+        ) * 0.10
 
         probability = base_probability - retry_penalty
 
@@ -59,11 +53,13 @@ class RecoverySimulator:
         payment: Payment,
         diagnosis: Diagnosis,
         decision: PolicyDecision,
+        run_id: UUID | None = None,
     ) -> RecoveryAttempt:
+        actual_run_id = run_id if run_id is not None else uuid4()
 
-        # Policy rejected the action.
         if not decision.allowed:
             return RecoveryAttempt(
+                run_id=actual_run_id,
                 payment_id=payment.payment_id,
                 action_type=RecommendedAction.STOP_NO_ACTION,
                 attempt_number=max(
@@ -83,14 +79,23 @@ class RecoverySimulator:
 
         recovered = self.rng.random() < probability
 
-        outcome = RecoveryOutcome.RECOVERED if recovered else RecoveryOutcome.FAILED
+        outcome = (
+            RecoveryOutcome.RECOVERED
+            if recovered
+            else RecoveryOutcome.FAILED
+        )
 
-        amount_recovered = payment.amount if recovered else 0.0
+        amount_recovered = (
+            payment.amount
+            if recovered
+            else 0.0
+        )
 
         return RecoveryAttempt(
+            run_id=actual_run_id,
             payment_id=payment.payment_id,
             action_type=decision.action,
-            attempt_number=decision.attempt_number,
+            attempt_number=max(decision.attempt_number, 1),
             outcome=outcome,
             amount_recovered=amount_recovered,
             timestamp=datetime.now(UTC),
@@ -99,14 +104,22 @@ class RecoverySimulator:
 
     def execute_batch(
         self,
-        cases: list[tuple[Payment, Diagnosis, PolicyDecision]],
+        cases: list[
+            tuple[
+                Payment,
+                Diagnosis,
+                PolicyDecision,
+            ]
+        ],
+        run_id: UUID | None = None,
     ) -> list[RecoveryAttempt]:
-
+        actual_run_id = run_id if run_id is not None else uuid4()
         return [
             self.execute(
                 payment,
                 diagnosis,
                 decision,
+                actual_run_id,
             )
             for payment, diagnosis, decision in cases
         ]

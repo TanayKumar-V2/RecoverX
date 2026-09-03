@@ -31,3 +31,9 @@ SessionLocal = sessionmaker(
 def get_db() -> Generator[Session]:
     with SessionLocal() as session:
         yield session
+
+
+def init_db() -> None:
+    from app.repositories.orm_models import Base
+
+    Base.metadata.create_all(engine)

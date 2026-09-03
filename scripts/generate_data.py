@@ -204,7 +204,7 @@ def main() -> None:
     print(df["decline_code"].value_counts())
 
     print("\nTotal at-risk revenue:")
-    print(f"₹{df['amount'].sum():,.2f}")
+    print(f"INR {df['amount'].sum():,.2f}")
 
 
 if __name__ == "__main__":

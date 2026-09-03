@@ -1,3 +1,6 @@
+from enum import Enum
+from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -6,12 +9,22 @@ from app.domain.models import Payment
 from app.repositories.orm_models import PaymentORM
 
 
+def enum_value(value: str | Enum) -> str:
+    if isinstance(value, Enum):
+        return str(value.value)
+
+    return value
+
+
 class PaymentRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
     def save(self, payment: Payment) -> None:
-        existing = self.session.get(PaymentORM, payment.payment_id)
+        existing = self.session.get(
+            PaymentORM,
+            payment.payment_id,
+        )
 
         if existing is None:
             row = PaymentORM(
@@ -24,7 +37,7 @@ class PaymentRepository:
                 past_retry_count=payment.past_retry_count,
                 failed_at=payment.failed_at,
                 subscription_plan=payment.subscription_plan,
-                status=payment.status.value,
+                status=enum_value(payment.status),
             )
             self.session.add(row)
             return
@@ -37,10 +50,16 @@ class PaymentRepository:
         existing.past_retry_count = payment.past_retry_count
         existing.failed_at = payment.failed_at
         existing.subscription_plan = payment.subscription_plan
-        existing.status = payment.status.value
+        existing.status = enum_value(payment.status)
 
-    def get_by_id(self, payment_id):
-        row = self.session.get(PaymentORM, payment_id)
+    def get_by_id(
+        self,
+        payment_id: UUID,
+    ) -> Payment | None:
+        row = self.session.get(
+            PaymentORM,
+            payment_id,
+        )
 
         if row is None:
             return None

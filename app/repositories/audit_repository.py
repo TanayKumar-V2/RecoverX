@@ -19,9 +19,10 @@ class AuditRepository:
         decision: str | None = None,
         policy_reason: str | None = None,
         metadata: dict[str, object] | None = None,
+        run_id: UUID | None = None,
     ) -> None:
-
         event = AuditEventORM(
+            run_id=run_id,
             payment_id=payment_id,
             event_type=event_type.value,
             actor=actor,
@@ -37,11 +38,34 @@ class AuditRepository:
         self,
         payment_id: UUID,
     ) -> list[AuditEventORM]:
-
-        stmt = (
+        statement = (
             select(AuditEventORM)
-            .where(AuditEventORM.payment_id == payment_id)
-            .order_by(AuditEventORM.timestamp)
+            .where(
+                AuditEventORM.payment_id == payment_id
+            )
+            .order_by(
+                AuditEventORM.timestamp
+            )
         )
 
-        return list(self.session.scalars(stmt).all())
+        return list(
+            self.session.scalars(statement).all()
+        )
+
+    def get_for_run(
+        self,
+        run_id: UUID,
+    ) -> list[AuditEventORM]:
+        statement = (
+            select(AuditEventORM)
+            .where(
+                AuditEventORM.run_id == run_id
+            )
+            .order_by(
+                AuditEventORM.timestamp
+            )
+        )
+
+        return list(
+            self.session.scalars(statement).all()
+        )

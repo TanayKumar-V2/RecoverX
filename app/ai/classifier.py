@@ -9,6 +9,7 @@ from cohere import (
     TextAssistantMessageResponseContentItem,
     UserChatMessageV2,
 )
+from cohere.errors import TooManyRequestsError
 
 from app.ai.cache import LLMCache
 from app.ai.cohere_client import create_cohere_client
@@ -81,8 +82,6 @@ class CohereClassifier:
                     },
                     "confidence": {
                         "type": "number",
-                        "minimum": 0,
-                        "maximum": 1,
                     },
                     "recommended_action": {
                         "type": "string",
@@ -133,22 +132,40 @@ class CohereClassifier:
         user_prompt = USER_PROMPT_TEMPLATE.format(payment_data=payment_data)
 
         start_time = time.perf_counter()
+        max_retries = 8
+        base_delay = 5.0
+        response = None
 
-        try:
-            response = self.client.chat(
-                model=self.settings.cohere_model,
-                messages=[
-                    UserChatMessageV2(
-                        role="user",
-                        content=(f"{SYSTEM_PROMPT}\n\n{user_prompt}"),
-                    )
-                ],
-                response_format=self._response_schema(),
-                temperature=0,
-            )
+        for attempt in range(max_retries):
+            try:
+                response = self.client.chat(
+                    model=self.settings.cohere_model,
+                    messages=[
+                        UserChatMessageV2(
+                            role="user",
+                            content=(f"{SYSTEM_PROMPT}\n\n{user_prompt}"),
+                        )
+                    ],
+                    response_format=self._response_schema(),
+                    temperature=0,
+                )
+                break
+            except TooManyRequestsError as exc:
+                if attempt == max_retries - 1:
+                    raise CohereDiagnosisError(f"Cohere rate limit exceeded: {exc}") from exc
+                sleep_time = base_delay * (1.5 ** attempt)
+                time.sleep(sleep_time)
+            except Exception as exc:
+                if "429" in str(exc) or "rate limit" in str(exc).lower():
+                    if attempt == max_retries - 1:
+                        raise CohereDiagnosisError(f"Cohere rate limit exceeded: {exc}") from exc
+                    sleep_time = base_delay * (1.5 ** attempt)
+                    time.sleep(sleep_time)
+                else:
+                    raise CohereDiagnosisError(f"Cohere request failed: {exc}") from exc
 
-        except Exception as exc:
-            raise CohereDiagnosisError(f"Cohere request failed: {exc}") from exc
+        if response is None:
+            raise CohereDiagnosisError("Cohere failed to return a response.")
 
         latency_ms = (time.perf_counter() - start_time) * 1000
 
@@ -157,16 +174,17 @@ class CohereClassifier:
         if not content:
             raise CohereDiagnosisError("Cohere returned an empty response.")
 
-        first_item = content[0]
+        text_item: TextAssistantMessageResponseContentItem | None = None
+        for item in content:
+            if isinstance(item, TextAssistantMessageResponseContentItem):
+                text_item = item
+                break
 
-        if not isinstance(
-            first_item,
-            TextAssistantMessageResponseContentItem,
-        ):
+        if text_item is None:
             raise CohereDiagnosisError("Cohere returned a non-text response.")
 
         try:
-            raw_response = json.loads(first_item.text)
+            raw_response = json.loads(text_item.text)
         except json.JSONDecodeError as exc:
             raise CohereDiagnosisError("Cohere returned invalid JSON.") from exc
 

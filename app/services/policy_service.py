@@ -1,6 +1,15 @@
+from enum import Enum
+
 from app.domain.enums import RecommendedAction, RootCause
 from app.domain.models import Diagnosis, Payment, PolicyDecision
 from app.domain.policies import MAX_RETRIES
+
+
+def enum_value(value: str | Enum) -> str:
+    if isinstance(value, Enum):
+        return str(value.value)
+
+    return value
 
 
 def decide_action(
@@ -28,7 +37,8 @@ def decide_action(
             action=RecommendedAction.ESCALATE_MANUAL_REVIEW,
             allowed=False,
             reason=(
-                f"low confidence ({diagnosis.confidence:.2f}); human review required"
+                f"low confidence ({diagnosis.confidence:.2f}); "
+                "human review required"
             ),
             attempt_number=payment.past_retry_count,
             max_attempts=0,
@@ -42,12 +52,15 @@ def decide_action(
             payment_id=payment.payment_id,
             action=action,
             allowed=True,
-            reason=f"policy allows action: {action.value}",
+            reason=(
+                f"policy allows action: "
+                f"{enum_value(action)}"
+            ),
             attempt_number=payment.past_retry_count,
             max_attempts=0,
         )
 
-    # Retry limit reached.
+    # Maximum retry limit reached.
     if payment.past_retry_count >= max_attempts:
         return PolicyDecision(
             payment_id=payment.payment_id,
@@ -61,11 +74,16 @@ def decide_action(
             max_attempts=max_attempts,
         )
 
+    # Retry is allowed
+    
     return PolicyDecision(
         payment_id=payment.payment_id,
         action=action,
         allowed=True,
-        reason=(f"policy allows attempt {payment.past_retry_count + 1}/{max_attempts}"),
+        reason=(
+            f"policy allows attempt "
+            f"{payment.past_retry_count + 1}/{max_attempts}"
+        ),
         attempt_number=payment.past_retry_count + 1,
         max_attempts=max_attempts,
     )

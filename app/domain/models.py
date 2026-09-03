@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -10,6 +10,16 @@ from app.domain.enums import (
     RecoveryOutcome,
     RootCause,
 )
+
+
+class BatchRun(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
+    run_id: UUID = Field(default_factory=uuid4)
+    started_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC)
+    )
+    completed_at: datetime | None = None
 
 
 class Payment(BaseModel):
@@ -70,6 +80,7 @@ class RecoveryAttempt(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
     action_id: UUID = Field(default_factory=uuid4)
+    run_id: UUID = Field(default_factory=uuid4)
     payment_id: UUID
 
     action_type: RecommendedAction

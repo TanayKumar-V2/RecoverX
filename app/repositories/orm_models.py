@@ -3,12 +3,55 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, Uuid
+from sqlalchemy import (
+    JSON,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Uuid,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
     pass
+
+
+class BatchRunORM(Base):
+    __tablename__ = "batch_runs"
+
+    run_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+    )
+
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+    )
+
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="running",
+    )
+
+    recovery_attempts: Mapped[list[RecoveryAttemptORM]] = relationship(
+        back_populates="batch_run",
+    )
+
+    audit_events: Mapped[list[AuditEventORM]] = relationship(
+        back_populates="batch_run",
+    )
 
 
 class PaymentORM(Base):
@@ -168,6 +211,13 @@ class RecoveryAttemptORM(Base):
         default=uuid4,
     )
 
+    run_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("batch_runs.run_id"),
+        nullable=True,
+        index=True,
+    )
+
     payment_id: Mapped[UUID] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("payments.payment_id"),
@@ -210,6 +260,10 @@ class RecoveryAttemptORM(Base):
         back_populates="recovery_attempts",
     )
 
+    batch_run: Mapped[BatchRunORM | None] = relationship(
+        back_populates="recovery_attempts",
+    )
+
 
 class AuditEventORM(Base):
     __tablename__ = "audit_events"
@@ -218,6 +272,13 @@ class AuditEventORM(Base):
         Integer,
         primary_key=True,
         autoincrement=True,
+    )
+
+    run_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("batch_runs.run_id"),
+        nullable=True,
+        index=True,
     )
 
     payment_id: Mapped[UUID] = mapped_column(
@@ -261,5 +322,9 @@ class AuditEventORM(Base):
     )
 
     payment: Mapped[PaymentORM] = relationship(
+        back_populates="audit_events",
+    )
+
+    batch_run: Mapped[BatchRunORM | None] = relationship(
         back_populates="audit_events",
     )
