@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import pandas as pd
@@ -7,70 +6,49 @@ import streamlit as st
 from dashboard.data import (
     get_batch_runs,
     get_root_cause_financials,
+    get_root_cause_insights,
+)
+from dashboard.ui import (
+    display_label,
+    format_inr,
+    format_percent,
+    render_run_selector,
 )
 
-LABELS: dict[str, str] = {
-    "insufficient_funds": "Insufficient funds",
-    "expired_card": "Expired card",
-    "hard_decline": "Hard decline",
-    "soft_decline": "Soft decline",
-    "fraud_flag": "Fraud flag",
-    "transient_glitch": "Transient glitch",
-}
+st.markdown(
+    '<div class="revloop-eyebrow">Financial Diagnostics</div>',
+    unsafe_allow_html=True,
+)
 
+st.markdown(
+    '<div class="revloop-title">Root Cause Analysis</div>',
+    unsafe_allow_html=True,
+)
 
-def display_label(value: str) -> str:
-    return LABELS.get(
-        value,
-        value.replace("_", " ").title(),
-    )
-
-
-st.title("Root Cause Analysis")
-
-st.caption(
-    "Understand which payment failure types "
-    "create the greatest recovery opportunity."
+st.markdown(
+    '<div class="revloop-subtitle">'
+    "Identify where revenue is being lost and where recovery works."
+    "</div>",
+    unsafe_allow_html=True,
 )
 
 
 # ---------------------------------------------------------------------------
-# Batch selection
+# Run selection
 # ---------------------------------------------------------------------------
 
 runs = get_batch_runs()
 
-completed_runs = [
-    run
-    for run in runs
-    if run["status"] == "completed"
-]
-
-if not completed_runs:
+if not runs:
     st.warning(
-        "No completed batch runs are available."
+        "No batch runs found."
     )
     st.stop()
 
-
-run_labels = [
-    (
-        f"{run['started_at']}  •  "
-        f"{str(run['run_id'])[:8]}"
-    )
-    for run in completed_runs
-]
-
-selected_index = st.sidebar.selectbox(
-    "Batch run",
-    options=range(len(completed_runs)),
-    format_func=lambda index: run_labels[index],
+run_id = render_run_selector(
+    runs,
     key="root_cause_run",
 )
-
-selected_run = completed_runs[selected_index]
-
-run_id = str(selected_run["run_id"])
 
 st.caption(
     f"Run ID: `{run_id}`"
@@ -82,6 +60,10 @@ st.caption(
 # ---------------------------------------------------------------------------
 
 metrics = get_root_cause_financials(
+    run_id
+)
+
+insights = get_root_cause_insights(
     run_id
 )
 
@@ -98,39 +80,55 @@ frame["Root cause"] = frame[
     "root_cause"
 ].map(display_label)
 
-
 frame["Recovery rate"] = (
     frame["recovery_rate"] * 100
 )
 
 
 # ---------------------------------------------------------------------------
-# Top opportunity
+# Executive insights
 # ---------------------------------------------------------------------------
 
-top_opportunity = frame.iloc[0]
+st.subheader("Key insights")
 
-col1, col2, col3 = st.columns(3)
+insight_columns = st.columns(3)
 
-with col1:
-    st.metric(
-        "Largest revenue exposure",
-        display_label(
-            str(top_opportunity["root_cause"])
-        ),
+for column, insight in zip(
+    insight_columns,
+    insights,
+):
+    root_cause = str(
+        insight["root_cause"]
     )
 
-with col2:
-    st.metric(
-        "Revenue at risk",
-        f"₹{top_opportunity['at_risk']:,.2f}",
+    value = float(
+        insight["value"]
     )
 
-with col3:
-    st.metric(
-        "Recovered from cause",
-        f"₹{top_opportunity['recovered']:,.2f}",
-    )
+    with column:
+        if insight["label"] == (
+            "Best recovery rate"
+        ):
+            display_value = format_percent(
+                value
+            )
+        else:
+            display_value = format_inr(
+                value
+            )
+
+        st.metric(
+            insight["label"],
+            display_value,
+            help=(
+                f"Root cause: "
+                f"{display_label(root_cause)}"
+            ),
+        )
+
+        st.caption(
+            display_label(root_cause)
+        )
 
 
 st.divider()
@@ -140,7 +138,7 @@ st.divider()
 # Financial exposure
 # ---------------------------------------------------------------------------
 
-st.subheader("Revenue exposure by root cause")
+st.subheader("Financial exposure by root cause")
 
 exposure_frame = frame[
     [
@@ -170,7 +168,7 @@ st.bar_chart(
         "Recovered",
     ],
     horizontal=True,
-    height=350,
+    height=380,
 )
 
 
@@ -195,18 +193,18 @@ effectiveness_frame = effectiveness_frame.sort_values(
     ascending=True,
 )
 
-effectiveness_frame[
-    "Recovery rate"
-] = effectiveness_frame[
-    "recovery_rate"
-]
+effectiveness_frame = effectiveness_frame.rename(
+    columns={
+        "recovery_rate": "Recovery rate (%)"
+    }
+)
 
 st.bar_chart(
     effectiveness_frame,
     x="Root cause",
-    y="Recovery rate",
+    y="Recovery rate (%)",
     horizontal=True,
-    height=300,
+    height=330,
 )
 
 
@@ -217,7 +215,7 @@ st.divider()
 # Detailed table
 # ---------------------------------------------------------------------------
 
-st.subheader("Root cause detail")
+st.subheader("Root cause performance")
 
 detail_frame = frame[
     [
@@ -240,19 +238,25 @@ detail_frame = detail_frame.rename(
 detail_frame["At risk"] = detail_frame[
     "At risk"
 ].map(
-    lambda value: f"₹{value:,.2f}"
+    lambda value: format_inr(
+        float(value)
+    )
 )
 
 detail_frame["Recovered"] = detail_frame[
     "Recovered"
 ].map(
-    lambda value: f"₹{value:,.2f}"
+    lambda value: format_inr(
+        float(value)
+    )
 )
 
 detail_frame["Recovery rate"] = detail_frame[
     "Recovery rate"
 ].map(
-    lambda value: f"{value:.2f}%"
+    lambda value: format_percent(
+        float(value)
+    )
 )
 
 st.dataframe(
@@ -262,18 +266,21 @@ st.dataframe(
 )
 
 
-with st.expander("How to interpret this page"):
+with st.expander(
+    "How to interpret this analysis"
+):
     st.markdown(
         """
-        **At risk** represents the total payment value associated with
-        each diagnosed root cause in the selected batch.
+        **Largest revenue exposure** identifies the failure type
+        associated with the greatest payment value.
 
-        **Recovered** represents the simulated revenue recovered from
-        those payments during the same batch run.
+        **Best recovery rate** identifies the failure type where
+        RevLoop currently recovers the largest share of revenue at risk.
 
-        **Recovery rate** is recovered revenue divided by revenue at risk.
+        **Largest unrecovered opportunity** identifies the failure type
+        with the greatest remaining financial exposure after simulated
+        recovery.
 
-        A root cause with high exposure but low recovery rate represents
-        a potentially important area for improving recovery policy.
+        These metrics are scoped to the selected batch run.
         """
     )

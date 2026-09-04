@@ -33,6 +33,12 @@ class RootCauseFinancialMetric:
     at_risk: float
     recovered: float
     recovery_rate: float
+
+@dataclass(frozen=True, slots=True)
+class RootCauseInsight:
+    label: str
+    root_cause: str
+    value: float
     
 @dataclass(frozen=True, slots=True)
 class CaseSummary:
@@ -628,3 +634,52 @@ class AnalyticsRepository:
             )
 
         return results
+
+    def get_root_cause_insights(
+        self,
+        run_id: UUID,
+    ) -> list[RootCauseInsight]:
+        metrics = self.get_root_cause_financials(
+            run_id
+        )
+
+        if not metrics:
+            return []
+
+        largest_exposure = max(
+            metrics,
+            key=lambda metric: metric.at_risk,
+        )
+
+        best_recovery = max(
+            metrics,
+            key=lambda metric: metric.recovery_rate,
+        )
+
+        largest_unrecovered = max(
+            metrics,
+            key=lambda metric: (
+                metric.at_risk - metric.recovered
+            ),
+        )
+
+        return [
+            RootCauseInsight(
+                label="Largest revenue exposure",
+                root_cause=largest_exposure.root_cause,
+                value=largest_exposure.at_risk,
+            ),
+            RootCauseInsight(
+                label="Best recovery rate",
+                root_cause=best_recovery.root_cause,
+                value=best_recovery.recovery_rate,
+            ),
+            RootCauseInsight(
+                label="Largest unrecovered opportunity",
+                root_cause=largest_unrecovered.root_cause,
+                value=(
+                    largest_unrecovered.at_risk
+                    - largest_unrecovered.recovered
+                ),
+            ),
+        ]

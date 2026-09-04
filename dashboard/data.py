@@ -270,3 +270,28 @@ def get_run_metrics() -> list[dict[str, object]]:
             }
             for metric in metrics
         ]
+
+
+@st.cache_data(ttl=10)
+def get_root_cause_insights(
+    run_id: str,
+) -> list[dict[str, object]]:
+    with SessionLocal() as session:
+        repository = AnalyticsRepository(
+            session
+        )
+
+        insights = (
+            repository.get_root_cause_insights(
+                UUID(run_id)
+            )
+        )
+
+        return [
+            {
+                "label": insight.label,
+                "root_cause": insight.root_cause,
+                "value": insight.value,
+            }
+            for insight in insights
+        ]
