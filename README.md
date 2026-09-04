@@ -11,34 +11,26 @@ RecoverX is an AI-assisted payment recovery decision system that diagnoses faile
 
 ## Dashboard Preview
 
-> Add screenshots to `docs/images/` to polish the repository. Placeholders below show the expected layout.
-
 ```text
 docs/
 └── images/
-    ├── overview.png
-    ├── root-cause.png
+    ├── overview_page.png
+    ├── root_cause.png
     ├── case-explorer.png
     └── batch-runs.png
 ```
 
-```md
-## Dashboard Preview
-
 ### Overview
-![RecoverX Overview](docs/images/overview.png)
+![RecoverX Overview](docs/images/overview_page.png)
 
 ### Root Cause Analysis
-![Root Cause Analysis](docs/images/root-cause.png)
+![Root Cause Analysis](docs/images/root_cause.png)
 
 ### Case Explorer
 ![Case Explorer](docs/images/case-explorer.png)
 
 ### Batch Runs
 ![Batch Runs](docs/images/batch-runs.png)
-```
-
-If the images are not yet captured, the dashboard can be launched locally via `uv run streamlit run dashboard/app.py` and screenshots taken at `http://localhost:8501`.
 
 ---
 
@@ -477,7 +469,7 @@ RecoverX/
 │       └── test_run_metrics.py
 │
 ├── docs/
-│   └── images/               # overview.png, root-cause.png, case-explorer.png, batch-runs.png
+│   └── images/               # overview_page.png, root_cause.png, case-explorer.png, batch-runs.png
 ├── .env.example
 ├── .gitignore
 ├── alembic.ini
