@@ -2,7 +2,6 @@
 
 ### AI-Assisted Subscription Payment Recovery Simulator
 
-**RecoverX is the engineering repository. RecoverX is the product built on top of it.**
 
 RecoverX is an AI-assisted payment recovery decision system that diagnoses failed subscription payments, applies deterministic safety policies, uses Cohere to reason about ambiguous failures, simulates recovery actions, records an auditable decision trail, and provides run-level financial analytics through a Streamlit dashboard.
 
