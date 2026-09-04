@@ -94,3 +94,62 @@ def get_outcomes(
         return repository.get_recovery_outcome_breakdown(
             UUID(run_id)
         )
+
+
+@st.cache_data(ttl=10)
+def get_root_cause_financials(
+    run_id: str,
+) -> list[dict[str, object]]:
+    with SessionLocal() as session:
+        repository = AnalyticsRepository(
+            session
+        )
+
+        metrics = (
+            repository.get_root_cause_financials(
+                UUID(run_id)
+            )
+        )
+
+        return [
+            {
+                "root_cause": metric.root_cause,
+                "payments": metric.payments,
+                "at_risk": metric.at_risk,
+                "recovered": metric.recovered,
+                "recovery_rate": metric.recovery_rate,
+            }
+            for metric in metrics
+        ]
+
+
+@st.cache_data(ttl=10)
+def get_cases(
+    run_id: str,
+) -> list[dict[str, object]]:
+    with SessionLocal() as session:
+        repository = AnalyticsRepository(
+            session
+        )
+
+        cases = repository.get_cases_for_run(
+            UUID(run_id)
+        )
+
+        return [
+            {
+                "payment_id": str(case.payment_id),
+                "customer_id": case.customer_id,
+                "amount": case.amount,
+                "decline_code": case.decline_code,
+                "root_cause": case.root_cause,
+                "diagnosis_source": case.diagnosis_source,
+                "confidence": case.confidence,
+                "action": case.action,
+                "outcome": case.outcome,
+                "amount_recovered": (
+                    case.amount_recovered
+                ),
+            }
+            for case in cases
+        ]

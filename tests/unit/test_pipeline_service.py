@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 from datetime import UTC, datetime
 from typing import cast
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
@@ -145,3 +145,50 @@ def test_pipeline_processes_batch_and_persists_audit_trail() -> None:
         assert event_types.count(
             AuditEventType.RECOVERY_ATTEMPT.value
         ) == 3
+
+        diagnosis_repo = DiagnosisRepository(session)
+        saved_diagnoses = diagnosis_repo.list_by_run(
+            UUID(result.run_id)
+        )
+        assert len(saved_diagnoses) == 3
+        assert all(
+            d.run_id == UUID(result.run_id)
+            for d in saved_diagnoses
+        )
+
+
+def test_diagnosis_repository_save_with_run_id() -> None:
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+    )
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        run_id = uuid4()
+        payment_id = uuid4()
+        diagnosis = Diagnosis(
+            run_id=run_id,
+            payment_id=payment_id,
+            root_cause=RootCause.INSUFFICIENT_FUNDS,
+            confidence=0.95,
+            source=DiagnosisSource.LLM,
+            recommended_action=RecommendedAction.SMART_RETRY,
+            reasoning="Test reasoning",
+        )
+
+        repo = DiagnosisRepository(session)
+        repo.save(
+            diagnosis,
+            run_id,
+        )
+        session.commit()
+
+        retrieved = repo.get_by_run_and_payment(
+            run_id,
+            payment_id,
+        )
+        assert retrieved is not None
+        assert retrieved.run_id == run_id
+        assert retrieved.payment_id == payment_id
+        assert retrieved.root_cause == RootCause.INSUFFICIENT_FUNDS

@@ -1,6 +1,6 @@
 import random
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from app.domain.enums import (
     DiagnosisSource,
@@ -34,8 +34,10 @@ def create_diagnosis(
     payment: Payment,
     root_cause: RootCause,
     action: RecommendedAction,
+    run_id: UUID | None = None,
 ) -> Diagnosis:
     return Diagnosis(
+        run_id=run_id,
         payment_id=payment.payment_id,
         root_cause=root_cause,
         confidence=0.95,

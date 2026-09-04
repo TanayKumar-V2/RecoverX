@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from app.domain.enums import (
     DiagnosisSource,
@@ -31,8 +31,10 @@ def create_diagnosis(
     root_cause: RootCause,
     action: RecommendedAction,
     confidence: float = 0.95,
+    run_id: UUID | None = None,
 ) -> Diagnosis:
     return Diagnosis(
+        run_id=run_id,
         payment_id=payment.payment_id,
         root_cause=root_cause,
         confidence=confidence,

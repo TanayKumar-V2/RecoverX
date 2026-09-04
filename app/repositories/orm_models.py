@@ -10,6 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    UniqueConstraint,
     Uuid,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -50,6 +51,10 @@ class BatchRunORM(Base):
     )
 
     audit_events: Mapped[list[AuditEventORM]] = relationship(
+        back_populates="batch_run",
+    )
+
+    diagnoses: Mapped[list[DiagnosisORM]] = relationship(
         back_populates="batch_run",
     )
 
@@ -138,10 +143,25 @@ class PaymentORM(Base):
 class DiagnosisORM(Base):
     __tablename__ = "diagnoses"
 
+    __table_args__ = (
+        UniqueConstraint(
+            "run_id",
+            "payment_id",
+            name="uq_diagnoses_run_payment",
+        ),
+    )
+
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
         autoincrement=True,
+    )
+
+    run_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("batch_runs.run_id"),
+        nullable=True,
+        index=True,
     )
 
     payment_id: Mapped[UUID] = mapped_column(
@@ -198,6 +218,10 @@ class DiagnosisORM(Base):
     )
 
     payment: Mapped[PaymentORM] = relationship(
+        back_populates="diagnoses",
+    )
+
+    batch_run: Mapped[BatchRunORM | None] = relationship(
         back_populates="diagnoses",
     )
 

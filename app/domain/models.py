@@ -44,6 +44,11 @@ class Payment(BaseModel):
 class Diagnosis(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
+    # None is allowed only for legacy diagnoses created before
+    # run tracking was introduced. New pipeline diagnoses always
+    # receive the current batch run ID.
+    run_id: UUID | None = None
+
     payment_id: UUID
 
     root_cause: RootCause

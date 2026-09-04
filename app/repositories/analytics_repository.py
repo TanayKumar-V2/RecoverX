@@ -25,6 +25,28 @@ class RunSummary:
     pending_recoveries: int
 
 
+@dataclass(frozen=True, slots=True)
+class RootCauseFinancialMetric:
+    root_cause: str
+    payments: int
+    at_risk: float
+    recovered: float
+    recovery_rate: float
+    
+@dataclass(frozen=True, slots=True)
+class CaseSummary:
+    payment_id: UUID
+    customer_id: str
+    amount: float
+    decline_code: str
+    root_cause: str | None
+    diagnosis_source: str | None
+    confidence: float | None
+    action: str | None
+    outcome: str | None
+    amount_recovered: float
+
+
 class AnalyticsRepository:
     """Read-only queries used by reporting and dashboard layers."""
 
@@ -252,3 +274,247 @@ class AnalyticsRepository:
             str(outcome): int(count)
             for outcome, count in rows
         }
+
+    def get_root_cause_financials(
+        self,
+        run_id: UUID,
+    ) -> list[RootCauseFinancialMetric]:
+        recovery_per_payment = (
+            select(
+                RecoveryAttemptORM.payment_id.label(
+                    "payment_id"
+                ),
+                func.sum(
+                    RecoveryAttemptORM.amount_recovered
+                ).label(
+                    "recovered"
+                ),
+            )
+            .where(
+                RecoveryAttemptORM.run_id == run_id
+            )
+            .group_by(
+                RecoveryAttemptORM.payment_id
+            )
+            .subquery()
+        )
+
+        statement = (
+            select(
+                AuditEventORM.decision,
+                func.count(
+                    distinct(AuditEventORM.payment_id)
+                ).label("payments"),
+                func.sum(
+                    PaymentORM.amount
+                ).label("at_risk"),
+                func.coalesce(
+                    func.sum(
+                        recovery_per_payment.c.recovered
+                    ),
+                    0.0,
+                ).label("recovered"),
+            )
+            .join(
+                PaymentORM,
+                PaymentORM.payment_id
+                == AuditEventORM.payment_id,
+            )
+            .outerjoin(
+                recovery_per_payment,
+                recovery_per_payment.c.payment_id
+                == AuditEventORM.payment_id,
+            )
+            .where(
+                AuditEventORM.run_id == run_id,
+                AuditEventORM.event_type == "diagnosis",
+                AuditEventORM.decision.is_not(None),
+            )
+            .group_by(
+                AuditEventORM.decision
+            )
+            .order_by(
+                func.sum(
+                    PaymentORM.amount
+                ).desc()
+            )
+        )
+
+        rows = self.session.execute(
+            statement
+        ).all()
+
+        metrics: list[RootCauseFinancialMetric] = []
+
+        for (
+            root_cause,
+            payments,
+            at_risk,
+            recovered,
+        ) in rows:
+            at_risk_value = float(at_risk or 0.0)
+            recovered_value = float(recovered or 0.0)
+
+            recovery_rate = (
+                recovered_value / at_risk_value
+                if at_risk_value > 0
+                else 0.0
+            )
+
+            metrics.append(
+                RootCauseFinancialMetric(
+                    root_cause=str(root_cause),
+                    payments=int(payments),
+                    at_risk=at_risk_value,
+                    recovered=recovered_value,
+                    recovery_rate=recovery_rate,
+                )
+            )
+
+        return metrics
+
+    def get_cases_for_run(
+        self,
+        run_id: UUID,
+    ) -> list[CaseSummary]:
+        latest_recovery = (
+            select(
+                RecoveryAttemptORM.payment_id.label(
+                    "payment_id"
+                ),
+                RecoveryAttemptORM.outcome.label(
+                    "outcome"
+                ),
+                RecoveryAttemptORM.amount_recovered.label(
+                    "amount_recovered"
+                ),
+            )
+            .where(
+                RecoveryAttemptORM.run_id == run_id
+            )
+            .subquery()
+        )
+
+        diagnosis = (
+            select(
+                AuditEventORM.payment_id.label(
+                    "payment_id"
+                ),
+                AuditEventORM.decision.label(
+                    "root_cause"
+                ),
+                AuditEventORM.actor.label(
+                    "diagnosis_source"
+                ),
+                AuditEventORM.metadata_json.label(
+                    "metadata"
+                ),
+            )
+            .where(
+                AuditEventORM.run_id == run_id,
+                AuditEventORM.event_type == "diagnosis",
+            )
+            .subquery()
+        )
+
+        policy = (
+            select(
+                AuditEventORM.payment_id.label(
+                    "payment_id"
+                ),
+                AuditEventORM.decision.label(
+                    "action"
+                ),
+            )
+            .where(
+                AuditEventORM.run_id == run_id,
+                AuditEventORM.event_type
+                == "policy_decision",
+            )
+            .subquery()
+        )
+
+        statement = (
+            select(
+                PaymentORM.payment_id,
+                PaymentORM.customer_id,
+                PaymentORM.amount,
+                PaymentORM.decline_code,
+                diagnosis.c.root_cause,
+                diagnosis.c.diagnosis_source,
+                diagnosis.c.metadata,
+                policy.c.action,
+                latest_recovery.c.outcome,
+                latest_recovery.c.amount_recovered,
+            )
+            .join(
+                diagnosis,
+                diagnosis.c.payment_id
+                == PaymentORM.payment_id,
+            )
+            .join(
+                policy,
+                policy.c.payment_id
+                == PaymentORM.payment_id,
+            )
+            .outerjoin(
+                latest_recovery,
+                latest_recovery.c.payment_id
+                == PaymentORM.payment_id,
+            )
+            .order_by(
+                PaymentORM.amount.desc()
+            )
+        )
+
+        rows = self.session.execute(
+            statement
+        ).all()
+
+        results: list[CaseSummary] = []
+
+        for row in rows:
+            metadata = row.metadata or {}
+
+            confidence = metadata.get(
+                "confidence"
+            )
+
+            results.append(
+                CaseSummary(
+                    payment_id=row.payment_id,
+                    customer_id=row.customer_id,
+                    amount=float(row.amount),
+                    decline_code=row.decline_code,
+                    root_cause=(
+                        str(row.root_cause)
+                        if row.root_cause is not None
+                        else None
+                    ),
+                    diagnosis_source=(
+                        str(row.diagnosis_source)
+                        if row.diagnosis_source is not None
+                        else None
+                    ),
+                    confidence=(
+                        float(confidence)
+                        if confidence is not None
+                        else None
+                    ),
+                    action=(
+                        str(row.action)
+                        if row.action is not None
+                        else None
+                    ),
+                    outcome=(
+                        str(row.outcome)
+                        if row.outcome is not None
+                        else None
+                    ),
+                    amount_recovered=float(
+                        row.amount_recovered or 0.0
+                    ),
+                )
+            )
+
+        return results

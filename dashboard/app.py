@@ -9,7 +9,6 @@ if str(ROOT_DIR) not in sys.path:
 
 import streamlit as st
 
-
 st.set_page_config(
     page_title="RevLoop",
     page_icon="↻",
@@ -44,6 +43,16 @@ pages = [
         title="Overview",
         icon=":material/dashboard:",
         default=True,
+    ),
+    st.Page(
+        "pages/root_cause.py",
+        title="Root Cause Analysis",
+        icon=":material/analytics:",
+    ),
+    st.Page(
+        "pages/case_explorer.py",
+        title="Case Explorer",
+        icon=":material/search:",
     ),
 ]
 

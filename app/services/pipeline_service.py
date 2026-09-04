@@ -108,7 +108,8 @@ class PipelineService:
                 )
 
                 self.diagnosis_repository.save(
-                    diagnosis
+                    diagnosis,
+                    run_id,
                 )
 
                 if diagnosis.source == DiagnosisSource.RULE:
