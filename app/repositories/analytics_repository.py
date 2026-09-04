@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.repositories.orm_models import (
     AuditEventORM,
+    BatchRunORM,
     PaymentORM,
     RecoveryAttemptORM,
 )
@@ -46,6 +47,16 @@ class CaseSummary:
     outcome: str | None
     amount_recovered: float
 
+@dataclass(frozen=True, slots=True)
+class RunMetrics:
+    run_id: UUID
+    started_at: object
+    completed_at: object | None
+    status: str
+    total_payments: int
+    total_at_risk: float
+    total_recovered: float
+    recovery_rate: float
 
 class AnalyticsRepository:
     """Read-only queries used by reporting and dashboard layers."""
@@ -514,6 +525,105 @@ class AnalyticsRepository:
                     amount_recovered=float(
                         row.amount_recovered or 0.0
                     ),
+                )
+            )
+
+        return results
+
+    def get_all_run_metrics(self) -> list[RunMetrics]:
+        run_statement = (
+            select(
+                BatchRunORM.run_id,
+                BatchRunORM.started_at,
+                BatchRunORM.completed_at,
+                BatchRunORM.status,
+            )
+            .order_by(
+                BatchRunORM.started_at.desc()
+            )
+        )
+
+        runs = self.session.execute(
+            run_statement
+        ).all()
+
+        results: list[RunMetrics] = []
+
+        for run in runs:
+            payment_ids = select(
+                RecoveryAttemptORM.payment_id
+            ).where(
+                RecoveryAttemptORM.run_id
+                == run.run_id
+            )
+
+            total_payments = int(
+                self.session.scalar(
+                    select(
+                        func.count(
+                            distinct(
+                                RecoveryAttemptORM.payment_id
+                            )
+                        )
+                    ).where(
+                        RecoveryAttemptORM.run_id
+                        == run.run_id
+                    )
+                )
+                or 0
+            )
+
+            total_at_risk = float(
+                self.session.scalar(
+                    select(
+                        func.coalesce(
+                            func.sum(
+                                PaymentORM.amount
+                            ),
+                            0.0,
+                        )
+                    ).where(
+                        PaymentORM.payment_id.in_(
+                            payment_ids
+                        )
+                    )
+                )
+                or 0.0
+            )
+
+            total_recovered = float(
+                self.session.scalar(
+                    select(
+                        func.coalesce(
+                            func.sum(
+                                RecoveryAttemptORM.amount_recovered
+                            ),
+                            0.0,
+                        )
+                    ).where(
+                        RecoveryAttemptORM.run_id
+                        == run.run_id
+                    )
+                )
+                or 0.0
+            )
+
+            recovery_rate = (
+                total_recovered / total_at_risk
+                if total_at_risk > 0
+                else 0.0
+            )
+
+            results.append(
+                RunMetrics(
+                    run_id=run.run_id,
+                    started_at=run.started_at,
+                    completed_at=run.completed_at,
+                    status=run.status,
+                    total_payments=total_payments,
+                    total_at_risk=total_at_risk,
+                    total_recovered=total_recovered,
+                    recovery_rate=recovery_rate,
                 )
             )
 

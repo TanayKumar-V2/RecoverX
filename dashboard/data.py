@@ -153,3 +153,120 @@ def get_cases(
             }
             for case in cases
         ]
+
+
+@st.cache_data(ttl=10)
+def get_case_details(
+    run_id: str,
+    payment_id: str,
+) -> dict[str, object] | None:
+    from uuid import UUID
+
+    from app.core.database import SessionLocal
+    from app.repositories.audit_repository import AuditRepository
+    from app.repositories.diagnosis_repository import (
+        DiagnosisRepository,
+    )
+    from app.repositories.payment_repository import (
+        PaymentRepository,
+    )
+    from app.repositories.recovery_repository import (
+        RecoveryRepository,
+    )
+
+    with SessionLocal() as session:
+        payment_repository = PaymentRepository(session)
+        diagnosis_repository = DiagnosisRepository(session)
+        recovery_repository = RecoveryRepository(session)
+        audit_repository = AuditRepository(session)
+
+        run_uuid = UUID(run_id)
+        payment_uuid = UUID(payment_id)
+
+        payment = payment_repository.get_by_id(
+            payment_uuid
+        )
+
+        if payment is None:
+            return None
+
+        diagnosis = (
+            diagnosis_repository.get_by_run_and_payment(
+                run_uuid,
+                payment_uuid,
+            )
+        )
+
+        recovery_attempts = (
+            recovery_repository.get_by_run_and_payment(
+                run_uuid,
+                payment_uuid,
+            )
+        )
+
+        audit_events = (
+            audit_repository.get_for_run_and_payment(
+                run_uuid,
+                payment_uuid,
+            )
+        )
+
+        return {
+            "payment": payment.model_dump(
+                mode="json"
+            ),
+            "diagnosis": (
+                diagnosis.model_dump(mode="json")
+                if diagnosis is not None
+                else None
+            ),
+            "recovery_attempts": [
+                attempt.model_dump(mode="json")
+                for attempt in recovery_attempts
+            ],
+            "audit_events": [
+                {
+                    "timestamp": event.timestamp,
+                    "event_type": event.event_type,
+                    "actor": event.actor,
+                    "decision": event.decision,
+                    "policy_reason": event.policy_reason,
+                    "metadata": event.metadata_json,
+                }
+                for event in audit_events
+            ],
+        }
+
+
+@st.cache_data(ttl=10)
+def get_run_metrics() -> list[dict[str, object]]:
+    with SessionLocal() as session:
+        repository = AnalyticsRepository(
+            session
+        )
+
+        metrics = (
+            repository.get_all_run_metrics()
+        )
+
+        return [
+            {
+                "run_id": str(metric.run_id),
+                "started_at": metric.started_at,
+                "completed_at": metric.completed_at,
+                "status": metric.status,
+                "total_payments": (
+                    metric.total_payments
+                ),
+                "total_at_risk": (
+                    metric.total_at_risk
+                ),
+                "total_recovered": (
+                    metric.total_recovered
+                ),
+                "recovery_rate": (
+                    metric.recovery_rate
+                ),
+            }
+            for metric in metrics
+        ]

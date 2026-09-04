@@ -54,6 +54,11 @@ pages = [
         title="Case Explorer",
         icon=":material/search:",
     ),
+    st.Page(
+        "pages/batch_runs.py",
+        title="Batch Runs",
+        icon=":material/history:",
+    ),
 ]
 
 
