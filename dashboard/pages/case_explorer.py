@@ -15,17 +15,17 @@ from dashboard.ui import (
 )
 
 st.markdown(
-    '<div class="revloop-eyebrow">Decision Trace</div>',
+    '<div class="recoverx-eyebrow">Decision Trace</div>',
     unsafe_allow_html=True,
 )
 
 st.markdown(
-    '<div class="revloop-title">Case Explorer</div>',
+    '<div class="recoverx-title">Case Explorer</div>',
     unsafe_allow_html=True,
 )
 
 st.markdown(
-    '<div class="revloop-subtitle">'
+    '<div class="recoverx-subtitle">'
     "Trace an individual payment from failure to financial outcome."
     "</div>",
     unsafe_allow_html=True,

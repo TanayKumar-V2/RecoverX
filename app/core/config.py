@@ -5,13 +5,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "RevLoop"
+    app_name: str = "RecoverX"
     app_env: str = "development"
 
     cohere_api_key: str | None = Field(default=None)
     cohere_model: str = "command-a-plus-05-2026"
 
-    database_url: str = "sqlite:///./revloop.db"
+    database_url: str = "sqlite:///./recoverx.db"
 
     log_level: str = "INFO"
 

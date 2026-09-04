@@ -1,4 +1,4 @@
-"""create revloop tables
+"""create recoverx tables
 
 Revision ID: a164327966a3
 Revises:

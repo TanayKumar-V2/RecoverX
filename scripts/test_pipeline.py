@@ -45,7 +45,7 @@ def main() -> None:
         decision,
     )
 
-    print("\n=== REVLOOP CASE ===")
+    print("\n=== RECOVERX CASE ===")
 
     print("\nPayment:")
     print(payment.model_dump_json(indent=2))

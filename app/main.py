@@ -20,7 +20,7 @@ app = FastAPI(
 def health_check() -> dict[str, str]:
     return {
         "status": "ok",
-        "service": "revloop",
+        "service": "recoverx",
     }
 
 
@@ -32,7 +32,7 @@ def cohere_health_check() -> dict[str, str]:
         model=settings.cohere_model,
         messages=[
             UserChatMessageV2(
-                content="Reply with exactly: RevLoop Cohere connection OK"
+                content="Reply with exactly: RecoverX Cohere connection OK"
             )
         ],
         temperature=0,

@@ -23,17 +23,17 @@ from dashboard.ui import (
 # ---------------------------------------------------------------------------
 
 st.markdown(
-    '<div class="revloop-eyebrow">Payment Recovery Intelligence</div>',
+    '<div class="recoverx-eyebrow">Payment Recovery Intelligence</div>',
     unsafe_allow_html=True,
 )
 
 st.markdown(
-    '<div class="revloop-title">RevLoop</div>',
+    '<div class="recoverx-title">RecoverX</div>',
     unsafe_allow_html=True,
 )
 
 st.markdown(
-    '<div class="revloop-subtitle">'
+    '<div class="recoverx-subtitle">'
     "AI-assisted subscription payment recovery"
     "</div>",
     unsafe_allow_html=True,
@@ -48,7 +48,7 @@ runs = get_batch_runs()
 
 if not runs:
     st.warning(
-        "No batch runs found. Run the RevLoop pipeline first."
+        "No batch runs found. Run the RecoverX pipeline first."
     )
     st.stop()
 
@@ -282,7 +282,7 @@ with detail_3:
 # Methodology
 # ---------------------------------------------------------------------------
 
-with st.expander("How RevLoop calculates these metrics"):
+with st.expander("How RecoverX calculates these metrics"):
     st.markdown(
         """
         **Revenue at risk** is the total value of failed payments

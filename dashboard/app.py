@@ -10,7 +10,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 st.set_page_config(
-    page_title="RevLoop",
+    page_title="RecoverX",
     page_icon="↻",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -48,7 +48,7 @@ st.markdown(
             border-right: 1px solid rgba(128, 128, 128, 0.15);
         }
 
-        .revloop-eyebrow {
+        .recoverx-eyebrow {
             font-size: 0.78rem;
             font-weight: 650;
             letter-spacing: 0.12em;
@@ -57,14 +57,14 @@ st.markdown(
             margin-bottom: 0.25rem;
         }
 
-        .revloop-title {
+        .recoverx-title {
             font-size: 2.25rem;
             font-weight: 750;
             line-height: 1.1;
             margin-bottom: 0.35rem;
         }
 
-        .revloop-subtitle {
+        .recoverx-subtitle {
             font-size: 1rem;
             opacity: 0.68;
             margin-bottom: 1.5rem;

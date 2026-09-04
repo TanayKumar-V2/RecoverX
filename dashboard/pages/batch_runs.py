@@ -8,7 +8,7 @@ from dashboard.data import get_run_metrics
 st.title("Batch Runs")
 
 st.caption(
-    "History and performance of RevLoop executions."
+    "History and performance of RecoverX executions."
 )
 
 

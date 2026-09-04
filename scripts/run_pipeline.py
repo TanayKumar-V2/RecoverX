@@ -118,7 +118,7 @@ def main() -> None:
         "=============================================="
     )
     print(
-        "           REVLOOP BATCH RESULTS"
+        "           RECOVERX BATCH RESULTS"
     )
     print(
         "=============================================="

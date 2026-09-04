@@ -1,10 +1,10 @@
-# RevLoop
+# RecoverX
 
 ### AI-Assisted Subscription Payment Recovery Simulator
 
-**RecoverX is the engineering repository. RevLoop is the product built on top of it.**
+**RecoverX is the engineering repository. RecoverX is the product built on top of it.**
 
-RevLoop is an AI-assisted payment recovery decision system that diagnoses failed subscription payments, applies deterministic safety policies, uses Cohere to reason about ambiguous failures, simulates recovery actions, records an auditable decision trail, and provides run-level financial analytics through a Streamlit dashboard.
+RecoverX is an AI-assisted payment recovery decision system that diagnoses failed subscription payments, applies deterministic safety policies, uses Cohere to reason about ambiguous failures, simulates recovery actions, records an auditable decision trail, and provides run-level financial analytics through a Streamlit dashboard.
 
 > **The LLM diagnoses ambiguity; deterministic policy controls what the system is actually allowed to do.**
 
@@ -27,7 +27,7 @@ docs/
 ## Dashboard Preview
 
 ### Overview
-![RevLoop Overview](docs/images/overview.png)
+![RecoverX Overview](docs/images/overview.png)
 
 ### Root Cause Analysis
 ![Root Cause Analysis](docs/images/root-cause.png)
@@ -57,13 +57,13 @@ Recurring subscription payments frequently fail because of issues such as:
 
 Blindly retrying every failed payment is unsafe and inefficient. Some failures should be retried immediately, some should wait, some should trigger a payment-method update, and some — especially fraud — should never be retried automatically.
 
-RevLoop explores a **policy-constrained recovery workflow** where each failed payment is diagnosed, evaluated against explicit recovery rules, and then either recovered, retried, stopped, or escalated for review.
+RecoverX explores a **policy-constrained recovery workflow** where each failed payment is diagnosed, evaluated against explicit recovery rules, and then either recovered, retried, stopped, or escalated for review.
 
 ---
 
 ## Solution
 
-RevLoop processes failed subscription payments through a closed-loop workflow:
+RecoverX processes failed subscription payments through a closed-loop workflow:
 
 ```
 Payment → Diagnosis → Policy Decision → Recovery Simulation → Audit Logging → Financial Analytics
@@ -147,7 +147,7 @@ scripts/
 | API framework | FastAPI `>=0.141.1` (scaffolded) |
 | Validation | Pydantic `>=2.13.4` + `pydantic-settings` |
 | AI | Cohere `>=7.0.9` (`command-a-plus-05-2026`) |
-| Database | SQLite (`sqlite:///./revloop.db` default) |
+| Database | SQLite (`sqlite:///./recoverx.db` default) |
 | ORM | SQLAlchemy `2.0.52` |
 | Migrations | Alembic `1.19.1` |
 | Dashboard | Streamlit `1.62.0` |
@@ -162,7 +162,7 @@ No other badges are added — the stack above is exactly what `pyproject.toml` d
 
 ## AI Architecture
 
-RevLoop intentionally uses a **hybrid diagnosis strategy** — it does *not* send every payment to the LLM.
+RecoverX intentionally uses a **hybrid diagnosis strategy** — it does *not* send every payment to the LLM.
 
 ### Deterministic path
 
@@ -208,7 +208,7 @@ This reduces unnecessary LLM calls, keeps known failure handling deterministic, 
 
 ## Policy and Safety Boundaries
 
-RevLoop does not allow the AI model to directly execute recovery actions. `app/services/policy_service.py` and `app/domain/policies.py` enforce hard constraints:
+RecoverX does not allow the AI model to directly execute recovery actions. `app/services/policy_service.py` and `app/domain/policies.py` enforce hard constraints:
 
 - fraud cases are never automatically retried (`FRAUD_FLAG → hard stop`)
 - low-confidence diagnoses are escalated for review
@@ -273,7 +273,7 @@ The run is associated with:
 
 This enables run-level analysis and prevents historical batch executions from being mixed.
 
-For an individual case, RevLoop reconstructs:
+For an individual case, RecoverX reconstructs:
 
 ```
 Payment → Diagnosis (run_id) → Policy (audit event run_id) → Recovery (run_id) → Audit trail (run_id)
@@ -318,7 +318,7 @@ Failed subscription payments ingested from `data/synthetic_payments.csv`. Same s
 
 ### Migrations
 
-- `a164327966a3_create_revloop_tables.py`
+- `a164327966a3_create_recoverx_tables.py`
 - `b7c4e21a9f31_add_batch_runs_and_run_tracking.py`
 - `c9d8f2a1e743_add_run_tracking_to_diagnoses.py`
 
@@ -517,7 +517,7 @@ Edit `.env`:
 ```env
 COHERE_API_KEY=your_api_key_here
 COHERE_MODEL=command-a-plus-05-2026
-DATABASE_URL=sqlite:///./revloop.db
+DATABASE_URL=sqlite:///./recoverx.db
 ```
 
 ---
@@ -540,7 +540,7 @@ uv run alembic current
 To reset (demo-only):
 
 ```bash
-rm revloop.db
+rm recoverx.db
 uv run alembic upgrade head
 ```
 
@@ -695,8 +695,8 @@ uv run streamlit run dashboard/app.py
 |---|:---:|---|---|
 | `COHERE_API_KEY` | Yes | — | Cohere API credential for LLM path |
 | `COHERE_MODEL` | No | `command-a-plus-05-2026` | Model used in `app/ai/classifier.py` |
-| `DATABASE_URL` | No | `sqlite:///./revloop.db` | SQLAlchemy URL (Alambique + `SessionLocal`) |
-| `APP_NAME` | No | `RevLoop` | Display name |
+| `DATABASE_URL` | No | `sqlite:///./recoverx.db` | SQLAlchemy URL (Alambique + `SessionLocal`) |
+| `APP_NAME` | No | `RecoverX` | Display name |
 | `APP_ENV` | No | `development` | Environment flag |
 | `LOG_LEVEL` | No | `INFO` | Logging |
 
@@ -710,7 +710,7 @@ Known failure modes are deterministic and should not require an LLM. The LLM is 
 
 ### Why doesn't Cohere directly decide whether to retry?
 
-Recovery execution is controlled by an explicit `PolicyService` so model output cannot bypass safety constraints. The LLM proposes; policy disposes. This is the `policy-constrained` core of RevLoop.
+Recovery execution is controlled by an explicit `PolicyService` so model output cannot bypass safety constraints. The LLM proposes; policy disposes. This is the `policy-constrained` core of RecoverX.
 
 ### Why SQLite?
 
@@ -780,14 +780,14 @@ Computer Science & Engineering Student
 - LinkedIn: *(add your LinkedIn)*
 - Email: `tanayk726@gmail.com`
 
-Project: `RecoverX` (repo) / `RevLoop` (product)
+Project: `RecoverX` (repo) / `RecoverX` (product)
 
 ---
 
 ## README's overall flow
 
 ```text
-1.  RevLoop (hero)
+1.  RecoverX (hero)
 2.  Dashboard Preview
 3.  Problem Statement
 4.  Solution
@@ -816,4 +816,4 @@ Project: `RecoverX` (repo) / `RevLoop` (product)
 27. Author
 ```
 
-> RevLoop simulates policy-constrained payment recovery and reports simulated recovered revenue.
+> RecoverX simulates policy-constrained payment recovery and reports simulated recovered revenue.

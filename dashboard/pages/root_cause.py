@@ -16,17 +16,17 @@ from dashboard.ui import (
 )
 
 st.markdown(
-    '<div class="revloop-eyebrow">Financial Diagnostics</div>',
+    '<div class="recoverx-eyebrow">Financial Diagnostics</div>',
     unsafe_allow_html=True,
 )
 
 st.markdown(
-    '<div class="revloop-title">Root Cause Analysis</div>',
+    '<div class="recoverx-title">Root Cause Analysis</div>',
     unsafe_allow_html=True,
 )
 
 st.markdown(
-    '<div class="revloop-subtitle">'
+    '<div class="recoverx-subtitle">'
     "Identify where revenue is being lost and where recovery works."
     "</div>",
     unsafe_allow_html=True,
@@ -275,7 +275,7 @@ with st.expander(
         associated with the greatest payment value.
 
         **Best recovery rate** identifies the failure type where
-        RevLoop currently recovers the largest share of revenue at risk.
+        RecoverX currently recovers the largest share of revenue at risk.
 
         **Largest unrecovered opportunity** identifies the failure type
         with the greatest remaining financial exposure after simulated
