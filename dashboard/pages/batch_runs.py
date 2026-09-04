@@ -147,7 +147,7 @@ display_frame = display_frame[
 
 st.dataframe(
     display_frame,
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )
 

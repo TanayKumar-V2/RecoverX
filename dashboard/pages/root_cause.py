@@ -261,7 +261,7 @@ detail_frame["Recovery rate"] = detail_frame[
 
 st.dataframe(
     detail_frame,
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )
 

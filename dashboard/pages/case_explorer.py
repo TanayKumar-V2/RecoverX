@@ -435,7 +435,7 @@ with journey_3:
         )
 
         st.metric(
-            label="",
+            label="Amount recovered",
             value=format_inr(
                 float(
                     latest[
@@ -443,6 +443,7 @@ with journey_3:
                     ]
                 )
             ),
+            label_visibility="collapsed",
         )
 
 
@@ -584,7 +585,7 @@ else:
 
     st.dataframe(
         recovery_frame,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
